@@ -32,7 +32,7 @@ Thursday, August 24th 2023
 | 10:30 | 10:45 | **Coffee**                        |
 | 10:45 | 12:00 | Fossil record biases              |
 | 12:00 | 13:30 | **Lunch**                         |
-| 13:30 | 13:1  | Sampling standardisation          |
+| 13:30 | 15:00  | Sampling standardisation         |
 | 15:00 | 15:15 | **Coffee**                        |
 | 15:15 | 16:45 | Sampling standardisation cont.    |
 
