@@ -106,7 +106,7 @@ glimpse(pbdb_data_raw)
 ## Note that this requires an internet connection
 
 ## First, choose a taxonomic group and time interval and create new objects:
-taxon_group <- "Pseudosuchia" # Taxon group
+taxon_group <- "Tetrapoda" # Taxon group
 start_interval <- "Carnian" # Interval to start at
 stop_interval <- "Toarcian" # Interval to stop at
 
