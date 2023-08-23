@@ -176,7 +176,7 @@ cov_rare[which(cov_rare$stage_int %in% intervals$interval_name[5:7]), "Period"] 
 cov_rare_plot <- ggplot(data = cov_rare, aes(x = SC, y = qD, ymin = qD.LCL, ymax = qD.UCL, fill = stage_int, colour = Period, lty = method)) +
   geom_line(linewidth = 1) +
   scale_linetype_manual(values=c("dotted", "solid", "dotdash")) +
-  # Add hex codes for the periods (see here: https://github.com/crimeacs/Geochronological_Colors/blob/master/Geochronological_scale_HEX.pdf)
+  # Add hex codes for the periods
   scale_colour_manual(values = c("#34b2c9","#812B92")) +
   theme_minimal() +
   labs(x = "Coverage", y = "Species richness") +
