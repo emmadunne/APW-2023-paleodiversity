@@ -130,6 +130,71 @@ write_csv(occ_data_raw, "./data/PBDB_pseudos_24_08_23.csv")
 
 # 4. Cleaning occurrence data ---------------------------------------------
 
-## Raw occurrence data is imperfect, especially if you have not curated it
-## yourself 
+## Raw occurrence data is imperfect, especially if you have not curated it yourself 
+## 'Cleaning' is a very  important step to ensure you don't include unnecessary info
+
+## Let's go through step by step and out some of the noise:
+
+## Remove 'super-generic' identifications, so that we only retain occurrences to species- and genus-level
+occ_data_raw2 <- filter(occ_data_raw, (identified_rank %in% c("species","genus")))
+
+## Remove occurrences with “aff.”, “ex. gr.”, “sensu lato”, “informal”, or quotation marks in their identified names
+## For PBDB data, why don't we use the "accepted_name" column for this?
+occ_data_raw3 <- occ_data_raw2 %>% 
+  filter(!grepl("cf\\.|aff\\.|\\?|ex\\. gr\\.|sensu lato|informal|\\\"", identified_name)) 
+
+## Remove ichnotaxa (trace fossils) so that only regular taxa remain
+## We can do this via the pres_mode column and entries marked as 'trace' or 'soft', and those with no genus name
+occ_data_raw4 <- occ_data_raw3[occ_data_raw3$pres_mode != "trace", ] # trace taxa
+occ_data_raw5 <- occ_data_raw4[!grepl("soft",occ_data_raw4$pres_mode), ] # 'soft' preservation
+
+## Remove entries without a genus name - in the PBDB these can be errors
+occ_data_raw6 <- occ_data_raw5[occ_data_raw5$genus != "", ]
+
+## Finally, filter the data so any duplicate taxon names or collection numbers are eliminated:
+occ_data <- distinct(occ_data_raw6, accepted_name, collection_no, .keep_all = TRUE)
+
+## Take a look at the end result - How much has our data been reduced by?
+length(unique(occ_data_raw$occurrence_no)) # start
+length(unique(occ_data$occurrence_no)) # finish
+
+## It's important to check your dataset for errors. In the case of fossil occurrence data, 
+## errors can come from taxonomy, statigraphy, geography, etc.
+
+
+
+
+# 5. Intervals data -------------------------------------------------------
+
+
+## We can also grab time intervals data from the PBDB API. We'll do this here to help us 
+## plotting later. However, these intervals data are quite out of date
+
+## Download names and ages of time intervals from the PBDB:
+intervals_all <- read.csv("http://paleobiodb.org/data1.1/intervals/list.txt?scale=all&limit=all")
+View (intervals_all) # take a look
+
+## Make a vector of stage names that we are interested in:
+interval_names <- c("Carnian", "Norian", "Rhaetian", # Late Triassic
+                    "Hettangian", "Sinemurian", "Pliensbachian", "Toarcian") # Early Jurassic
+
+## Select these intervals from the full PBDB intervals dataset:
+intervals <- filter(intervals_all, interval_name %in% interval_names)
+
+## Pare this down to just the 3 columns we'll need:
+intervals <- select(intervals, interval_name, early_age, late_age)
+
+## For ease of use later, let's rename the age columns to match the occurrence data:
+intervals <- rename(intervals, "max_ma" = "early_age", "min_ma" = "late_age")
+
+## And finally, calculate the midpoint for each interval and add it to a new (4th) column
+intervals$mid_ma <- (intervals$min_ma + intervals$max_ma)/2
+
+## Take a peep:
+View(intervals) # open as new tab
+
+## Save a copy as a .csv file - Note: your file path will differ!
+write_csv(intervals, "./data/intervals_Car_Tor.csv")
+
+
 
