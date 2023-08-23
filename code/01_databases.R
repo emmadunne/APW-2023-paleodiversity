@@ -9,7 +9,7 @@
 # ______________________________________________________
 #
 #   1. Accessing databases in R 
-#       & manipulating imported data
+#       & cleaning imported data
 # 
 # ******************************************************
 
@@ -88,7 +88,7 @@ class(corals$ecologyBoth)
 
 ## Any dataset can be imported into R from a file
 ## Let's download some data from the PBDB using the Download Generator 
-## Where are you going to store this file?
+## https://paleobiodb.org/classic/displayDownloadGenerator
 
 ## Now let's import it:
 pbdb_data_raw <- read.csv("./data/pbdb_data.csv", skip = 18) 
@@ -131,20 +131,18 @@ write_csv(occ_data_raw, "./data/PBDB_pseudos_24_08_23.csv")
 # 4. Cleaning occurrence data ---------------------------------------------
 
 ## Raw occurrence data is imperfect, especially if you have not curated it yourself 
-## 'Cleaning' is a very  important step to ensure you don't include unnecessary info
-
-## Let's go through step by step and out some of the noise:
+## 'Cleaning' is a very important step to ensure you don't include unnecessary info
+## Let's go through step by step and remove some of the noise from the data we just downlaoded
 
 ## Remove 'super-generic' identifications, so that we only retain occurrences to species- and genus-level
 occ_data_raw2 <- filter(occ_data_raw, (identified_rank %in% c("species","genus")))
 
-## Remove occurrences with “aff.”, “ex. gr.”, “sensu lato”, “informal”, or quotation marks in their identified names
-## For PBDB data, why don't we use the "accepted_name" column for this?
+## Remove occurrences with “aff.”, “ex. gr.”, “sensu lato”, “informal”, or quotation marks in identified names
 occ_data_raw3 <- occ_data_raw2 %>% 
   filter(!grepl("cf\\.|aff\\.|\\?|ex\\. gr\\.|sensu lato|informal|\\\"", identified_name)) 
 
 ## Remove ichnotaxa (trace fossils) so that only regular taxa remain
-## We can do this via the pres_mode column and entries marked as 'trace' or 'soft', and those with no genus name
+## We can do this via the pres_mode column and entries marked as 'trace' or 'soft'
 occ_data_raw4 <- occ_data_raw3[occ_data_raw3$pres_mode != "trace", ] # trace taxa
 occ_data_raw5 <- occ_data_raw4[!grepl("soft",occ_data_raw4$pres_mode), ] # 'soft' preservation
 
@@ -158,8 +156,8 @@ occ_data <- distinct(occ_data_raw6, accepted_name, collection_no, .keep_all = TR
 length(unique(occ_data_raw$occurrence_no)) # start
 length(unique(occ_data$occurrence_no)) # finish
 
-## It's important to check your dataset for errors. In the case of fossil occurrence data, 
-## errors can come from taxonomy, statigraphy, geography, etc.
+## If you were publishing with these data, you would also need to check the dataset for
+## errors in taxonomy, statigraphy, geography, etc. too.
 
 
 
@@ -167,13 +165,15 @@ length(unique(occ_data$occurrence_no)) # finish
 # 5. Intervals data -------------------------------------------------------
 
 
-## We can also grab time intervals data from the PBDB API. We'll do this here to help us 
-## plotting later. However, these intervals data are quite out of date
+## We can also grab time intervals data from the PBDB API. 
+## We'll do this here to help us with plotting later. However, these intervals data are 
+## quite out of date, so I wouldn't recommend relying on them for publications etc.
 
 ## Download names and ages of time intervals from the PBDB:
 intervals_all <- read.csv("http://paleobiodb.org/data1.1/intervals/list.txt?scale=all&limit=all")
 View (intervals_all) # take a look
 
+## For the rest of this session, we're going to focus on the Late Triassic-Early Jurassic interval
 ## Make a vector of stage names that we are interested in:
 interval_names <- c("Carnian", "Norian", "Rhaetian", # Late Triassic
                     "Hettangian", "Sinemurian", "Pliensbachian", "Toarcian") # Early Jurassic
@@ -195,6 +195,5 @@ View(intervals) # open as new tab
 
 ## Save a copy as a .csv file - Note: your file path will differ!
 write_csv(intervals, "./data/intervals_Car_Tor.csv")
-
 
 
