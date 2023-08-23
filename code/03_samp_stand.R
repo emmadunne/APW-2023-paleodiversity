@@ -18,7 +18,7 @@
 ##    1. Coverage-based rarefaction (similar to Shareholder Quroum Subsampling, SQS)
 ##    2. Squares, another coverage-based method of sampling standardisation
 ## Before getting into these methods, we will first explore our data using
-##    rarefaction curves via the iNEXT package
+##    Good's u and Rarefaction/Extrapolation curves curves via the iNEXT package
 
 
 
@@ -32,102 +32,173 @@ library(iNEXT)
 
 
 
-# 1. Rarefaction curves ---------------------------------------------------
+
+# Good's u ----------------------------------------------------------------
+
+## We will start off by examining Good's u, which is ued by the traditional SQS 
+##    method as a measure of sample 'coverage'. In iNEXT the equations of Chao & Jost
+##    do this job - see notes below for more information
 
 ## Start off by loading your *cleaned* occurrence data (if not already in R form earlier):
 #occ_data <- read_csv("./data/PBDB_pseudos.csv")
 
-
-## Pare this down to just the columns we need, while creating a new data object so we don't overwrite the original:
+## Pare this down to just the columns we need, while creating a new data object so 
+##  we don't overwrite the original. We'll use genus level data for these analyses:
 genus_data <- subset(occ_data, select=c(genus, accepted_name, occurrence_no, collection_no,
                                         early_interval, late_interval, min_ma, max_ma))
 
+## And load your data information if its not already in R:
+#intervals <- read_csv("./data/intervals_Car_Tor.csv")
 
 
+N <- sum(Individuals) # N
+n1 <- length(which(Individuals==1))
+u <- 1- n1/N # Good's u
 
-inc.data <- iNEXT(freq_data, q = 0, datatype = "incidence_freq")
-cov_rare <- inc.data$iNextEst
-for(i in 1:length(cov_rare)) {
-  cov_rare[[i]]$stage_int <- names(cov_rare)[i]
+
+## To compute Good's u for each interval, we need to know the frequencies of each taxon (genus):
+tax_freq <- lapply(1:nrow(intervals), function(i) {
+  tmp <- genus_data %>% filter(max_ma >= intervals[i,"max_ma"] & min_ma <= intervals[i,"min_ma"]) %>% 
+    count(., genus) %>% arrange(desc(n)) %>% # count no. genera in each interval
+    select(n)
+  freq_raw <- as.numeric(tmp$n)
+  freq_raw
+})
+names(tax_freq) <- intervals$interval_name # give each list element its correct interval name
+str(tax_freq) # call up the list to see a summary of its structure
+
+
+## This is the function to calculate Good's u. 
+## You only need to run it once, but you can tweak some parts of it, depending on what you are interested in
+goodsU <- function(occvec) {
+  n <- sum(occvec) # sum of all occurrences
+  f1 <- sum(occvec == 1); f2 <- sum(occvec == 2) # sum of singletons vs. doubletons
+  # out <- 1 - (f1 / sum(occvec)) # singleton-only coverage estimator
+  out <- 1 - length(which(occvec==1)) / n
+  #out <- 1 - (f1/n) * (((n - 1) * f1) / ((n - 1) * f1 + 2 * f2)) # Chao and Jost (2012) coverage estimator using singletons and doubletons
+  out[is.nan(out) | is.infinite(out)] <- NA
+  return(out)
 }
 
-ggiNEXT(inc.data, type=1, facet.var="site")
-ggiNEXT(inc.data, type=2)
+## Now let's compute Good's u for each interval:
+intervals_Gu <- lapply(tax_freq, goodsU)
+intervals_Gu <- as.data.frame(do.call(rbind, intervals_Gu)) # convert to dataframe 
+intervals_Gu # pull results up the the console
 
-cov_rare <- do.call(rbind, cov_rare) %>% as_tibble() #convert to tibble for ease of plotting
-cov_rare[which(cov_rare$stage_int %in% intervals$interval_name[1:4]), "Period"] <- "Jurassic"
-cov_rare[which(cov_rare$stage_int %in% intervals$interval_name[5:7]), "Period"] <- "Triassic"
-
-cov_rare_plot <- ggplot(data = cov_rare, aes(x = SC, y = qD, ymin = qD.LCL, ymax = qD.UCL, fill = stage_int, colour = Period, lty = method)) +
-  geom_line(linewidth = 1) +
-  scale_linetype_manual(values=c("dotted", "solid", "dotdash")) +
-  scale_colour_manual(values = c("#67A599","#F04028")) +
-  theme(panel.background = element_blank(),
-        legend.position="none",
-        panel.grid.minor.y = element_line(colour = "grey90"),
-        panel.grid.minor.x = element_line(colour = "grey90"),
-        panel.grid.major.y = element_line(colour = "grey90"),
-        panel.grid.major.x = element_line(colour = "grey90"),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text.x = element_text(size=12, angle=0, hjust=0.5),
-        axis.text.y = element_text(size=16),
-        axis.title = element_text(size=14)) +
-  labs(x = "Coverage", y = "Species richness") +
-  scale_x_continuous(limits = c(0, 1.05), expand=c(0,0), breaks = seq(0, 1, 0.25)) +
-  scale_y_continuous(limits = c(0, 90), expand=c(0,0), breaks = seq(0, 90, 15))
-cov_rare_plot
-cov_rare_plot + geom_dl(data=cov_rare1, aes(label=stage_int),method=list("last.points",rot=30))
+## Good's u runs from 0 (totally incomplete) to 1 (very 'complete')
+## How 'complete' are your intervals?
 
 
 
+# 2. Data set-up for iNEXT ------------------------------------------------
 
-
-
-
-
-# 2. Shareholder Quorum Subsampling (SQS) ---------------------------------
-
-
-## Shareholder Quorum Subsampling (SQS) uses rank-order abundance to estimate diversity 
-## through subsampling at different degrees of sampling coverage, or 'quorum levels', 
-## and estimates diversity using a metric called Good's u. 
-
-## We will use the package iNEXT, which estimates diversity using Hill numbers via 
-## subsampling with the equations of Chao and Jost (2012), and also implements extrapolation, 
-## using the Chao1 estimator - for more info, see Hsieh et al. (2016):
+## Now let's explore with iNEXT. This is a very comprehensive and flexible
+##    package - we will only be scratching the surface here. Take a look at the
+##    publicaito and associated documentation/tuturials for more info
 citation("iNEXT") # https://besjournals.onlinelibrary.wiley.com/doi/10.1111/2041-210X.12613
 
-
-## To get your data in the right shape for subsampling in iNEXT, you'll need:
+## First, we need to get our data set up properly:
 ##   1. a dataframe of interval names
 ##   2. total number of occurrences in each interval (i.e. sampling units)
-##   3. genus incidence frequencies for each interval
+##   3. taxon incidence frequencies for each interval
 
-## In the , the first entry of each list object is the total number of 
-## sampling units, followed by the taxa incidence frequencies
-## For example: Interval_A : 150 99 96 80 74 68 60 54 46 45
-## = there are 150 taxa in Interval_A, 99 in the first collection, 96 in the second, etc.
+## In the incidence frequencies, the first entry of each list object is the total number of 
+##    sampling units, followed by the taxa incidence frequencies
+##    For example: Interval_A : 150 99 96 80 74 68 60 54 46 45
+##      = there are 150 taxa in Interval_A, 99 in the first collection, 96 in the second, etc.
 
 ## 1. We've already got our intervals information from earlier, load that now if its not already in R:
 #intervals <- read_csv("./data/intervals_Car_Tor.csv")
 
-## 2 + 3. Get the genus incidence frequencies for each interval
+## 2 + 3. Genus incidence frequencies for each interval
+## This loop computes incidence frequences for each interval in the intervals data:
 freq_data <- lapply(1:nrow(intervals), function(i) {
-  tmp <- genus_data %>% filter(max_ma >= intervals[i,"max_ma"] & min_ma <= intervals[i,"min_ma"]) %>% 
-    count(., genus) %>% arrange(desc(n)) %>% 
-    add_row(n = sum(.$n), .before = 1) %>%
+  tmp <- genus_data %>% dplyr::filter(max_ma >= intervals[i,"max_ma"] & min_ma <= intervals[i,"min_ma"]) %>% 
+    count(., genus) %>% arrange(desc(n)) %>% # count no. genera in each interval
+    add_row(n = sum(.$n), .before = 1) %>% # find total number of genera
     select(n)
-  freq_raw <- as.numeric(tmp$n)
+  freq_raw <- as.numeric(tmp$n) 
   freq_raw
 })
 names(freq_data) <- intervals$interval_name # give each list element its correct interval name
 str(freq_data) # call up the list to see a summary of its structure
 freq_data[[6]] # check the data for the Norian
 
+## Now we're ready to go!
 
-## Now that we've got our data in the right shape, let's do some estimates!
 
-## Create a vector of quorum levels that we want to compute
+
+
+# 3. Rarefaction/Extrapolation curves -------------------------------------
+
+
+## The main function of the package is iNEXT() (which gives the package its name) and means
+##    "Interpolation and extrapolation of Hill number with order q"
+##    This function has a much longer and more complex description that you can find
+##    in the original literature, but for our purposes here, it is computing diversity 
+##    estimates, sample coverage estimates and related statistics for sample sizes
+
+## Compute iNEXT for our incidence frequency data:
+inc_data <- iNEXT(freq_data, q = 0, datatype = "incidence_freq")
+
+## This returns the "iNEXT" object including different output lists. We need $iNextEst,
+##    which shows size- and coverage-based diversity estimates along with related
+##    statistics for a series of rarefied and extrapolated samples
+cov_rare <- inc_data$iNextEst # extract these data from the output lists
+
+## The function ggiNEXT() extends ggplot2 to help plot the output.
+?ggiNEXT # put up the help tab
+
+## It allows 3 types of curves - see the documentation for more information
+##  1. Sample-size-based R/E curve (type=1) - plots diversity estimates with confidence 
+##      intervals (if se=TRUE) as a function of sample size up to double
+ggiNEXT(inc_data, type=1, facet.var="site", se=TRUE) + theme_minimal()
+
+##  2. Sample completeness curve (type=2) with confidence intervals - plots 
+##      the sample coverage with respect to sample size 
+ggiNEXT(inc_data, type=2) + theme_minimal()
+
+##  3. Coverage-based R/E curve (type=3) - plots the diversity estimates with 
+##      confidence intervals as a function of sample coverage up to the maximum coverage
+ggiNEXT(inc_data, type=3) + theme_minimal()
+
+
+## To make a publication-worthy Coverage-based R/E curve, we can plot all of the intervals together
+## First let's go some tidying up so we can colour the Triassic and Jurassic separently:
+for(i in 1:length(cov_rare)) {
+  cov_rare[[i]]$stage_int <- names(cov_rare)[i] # add stage_int
+}
+cov_rare <- do.call(rbind, cov_rare) %>% as_tibble() # convert to tibble for ease of plotting
+cov_rare[which(cov_rare$stage_int %in% intervals$interval_name[1:4]), "Period"] <- "Jurassic" # mark Jurassic stages
+cov_rare[which(cov_rare$stage_int %in% intervals$interval_name[5:7]), "Period"] <- "Triassic" # mark Jurassic stages
+
+## Finally, set up the plot in ggplot
+cov_rare_plot <- ggplot(data = cov_rare, aes(x = SC, y = qD, ymin = qD.LCL, ymax = qD.UCL, fill = stage_int, colour = Period, lty = method)) +
+  geom_line(linewidth = 1) +
+  scale_linetype_manual(values=c("dotted", "solid", "dotdash")) +
+  # Add hex codes for the periods (see here: https://github.com/crimeacs/Geochronological_Colors/blob/master/Geochronological_scale_HEX.pdf)
+  scale_colour_manual(values = c("#34b2c9","#812B92")) +
+  theme_minimal() +
+  labs(x = "Coverage", y = "Species richness") +
+  scale_x_continuous(limits = c(0, 1.05), expand=c(0,0), breaks = seq(0, 1, 0.25)) +
+  scale_y_continuous(limits = c(0, 80), expand=c(0,0), breaks = seq(0, 80, 20))
+cov_rare_plot
+
+
+
+# 4. Shareholder Quorum Subsampling (SQS) ---------------------------------
+
+
+## Shareholder Quorum Subsampling (SQS) uses rank-order abundance to estimate diversity 
+##    through subsampling at different degrees of sampling coverage, or 'quorum levels', 
+##    and estimates diversity using a metric called Good's u. 
+
+## We will use the package iNEXT, which estimates diversity using Hill numbers via 
+##    subsampling with the equations of Chao and Jost (2012), and also implements extrapolation, 
+##    using the Chao1 estimator - for more info, see Hsieh et al. (2016):
+
+
+## Start by creating a vector of quorum levels that we want to compute
 ## 0.4 is considered the 'standard', but the fashion now is to plot multiple quorum levels
 quorum_levels <- round(seq(from = 0.5, to = 0.8, by = 0.1), 1)
 
@@ -191,7 +262,7 @@ ggsave("./plots/iNEXT_gen.pdf", plot = iNEXT_plot,
 
 
 
-# 3.Squares ------------------------------------------------------------------
+# 5.Squares ------------------------------------------------------------------
 
 ## Squares is an extrapolator and coverage-based approach which performs well when the 
 ##    rank abundance distributions of samples are particularly strongly skewed 
