@@ -3,22 +3,22 @@
 <br>
 
 ### Authors:
-Emma Dunne (emma.dunne[at]fau.de)
-Lisa Schnetz (lisa.schnetz[at]gmail.com)
+- Emma Dunne (emma.dunne[at]fau.de)
+- Lisa Schnetz (lisa.schnetz[at]gmail.com)
 
 <br>
 
-> Indeed, there are many things that we might never know about extinct species, such as their true geographic range or abundances. But, for now, we should view our knowledge of the history of life on Earth as a work in progress - **Roger Benson** (2018)
+> Indeed, there are many things that we might never know about extinct species, such as their true geographic range or abundances. But, for now, we should view our knowledge of the history of life on Earth as a work in progress - *Roger Benson* (2018)
 
 <br>
 
 ## Purpose
 
-This repository contains all materials, such as code and slideshows, for **Day 4: Exploring fossil occurrence data and fossil record biases** of the Analytical Paleobiology Workshop. There are three main parts to this class and each one has an associated exercise in R:
+This repository contains all materials, such as code and slideshows, for *Day 4: Exploring fossil occurrence data and fossil record biases* of the Analytical Paleobiology Workshop. There are three main parts to this class and each one has an associated exercise in R:
 
-1. *Databases in Paleobiology* - available databases, futurproofing, accessing the Paleobiology Database and importing datasets into R
-2. *Fossil record biases* - exaploring the impact of biases on estimates of diversity through visualisations and simple statistics
-3. *Sampling standardisation* - Rarefaction/Extrapolation curves, coverage-based rarefaction with iNEXT, Shareholder Quorum Subsampling (SQS), and squares
+1. **Databases in Paleobiology** - available databases, futurproofing, accessing the Paleobiology Database and importing datasets into R
+2. **Fossil record biases** - exaploring the impact of biases on estimates of diversity through visualisations and simple statistics
+3. **Sampling standardisation** - Rarefaction/Extrapolation curves, coverage-based rarefaction with iNEXT, Shareholder Quorum Subsampling (SQS), and squares
 
 <br>
 
