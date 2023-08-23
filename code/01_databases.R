@@ -1,4 +1,4 @@
-# =======================================================
+# ******************************************************
 #
 #   Analytical Paleobiology Workshop 2023
 #
@@ -11,7 +11,7 @@
 #   1. Accessing databases in R 
 #       & manipulating imported data
 # 
-# =======================================================
+# ******************************************************
 
 
 # 0. Packages used in this script -----------------------------------------
@@ -59,6 +59,7 @@ sepkoski_curve()
 sepkoski_curve(fill = TRUE)
 
 
+
 ### (b) divDyn
 
 ## Let's check out the corals dataset within divDyn
@@ -101,13 +102,15 @@ glimpse(pbdb_data_raw)
 
 # 3. PBDB via URL ---------------------------------------------------------
 
+## The Paleobiology Database data can accessed through an API request
+## Note that this requires an internet connection
 
-## First, choose a taxonomic group and time interval:
+## First, choose a taxonomic group and time interval and create new objects:
 taxon_group <- "Pseudosuchia" # Taxon group
 start_interval <- "Carnian" # Interval to start at
 stop_interval <- "Toarcian" # Interval to stop at
 
-## Create an API request form the Paleobiology Database and store this URL as an object
+## Create an API request form the PBDB and store this URL as an object
 ## A list of API options can be found here: https://paleobiodb.org/data1.2/
 URL <- paste0("https://paleobiodb.org/data1.2/occs/list.csv?base_name=", # occurrence data, as a .csv
               taxon_group, "&interval=", start_interval, ",", stop_interval, # use our inputs from above
@@ -121,9 +124,12 @@ glimpse(occ_data_raw) # view columns
 View(occ_data_raw) # open as new tab
 
 ## It's good practice to save copies of your data as you go:
-write_csv(occ_data_raw, "./data/PBDB_pseudos.csv")
+write_csv(occ_data_raw, "./data/PBDB_pseudos_24_08_23.csv")
 
 
 
+# 4. Cleaning occurrence data ---------------------------------------------
 
+## Raw occurrence data is imperfect, especially if you have not curated it
+## yourself 
 
