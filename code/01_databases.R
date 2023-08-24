@@ -48,7 +48,7 @@ data("interval_table") # a table linking intervals in Sepkoski's compendium with
 View(sepkoski_raw) # opens a new tab in RStudio
 
 ## What variables have we got?
-glimpse(sepkoski_raw) # dplyr (tidyyverse function)
+glimpse(sepkoski_raw) # dplyr (tidyverse function)
 str(sepkoski_raw) # base R function
 
 ## Let's plot Sepkoski's famous curve
@@ -80,6 +80,7 @@ class(corals$genus) # what type of data is in the GENUS column?
 ## What type of data is in...
 class(corals$max_ma)
 class(corals$ecologyBoth)
+class(corals$growth)
 
 
 
