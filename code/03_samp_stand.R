@@ -25,6 +25,7 @@
 # 0. Packages used in this script -----------------------------------------
 
 library(tidyverse)
+library(deeptime)
 
 require(devtools)
 install_version("iNEXT", version = "2.0.20")# the most up-to-date version of iNEXT is still a little glitchy, so we'll use this one for now
@@ -253,6 +254,22 @@ iNEXT_plot <- ggplot(estD_plotting, aes(x = mid_ma, y = qD, ymin = qD.LCL, ymax 
   theme_minimal()
 iNEXT_plot # Call the plot to the plots tab
 
+
+## If you want to add a scale using the deeptime package, you can use the function coord_geo()
+## which can be used with ggplot2. Let's add some abbreviated stages:
+
+iNEXT_plot_stages <- iNEXT_plot + coord_geo(xlim = c(237.0, 174.1), ylim = c(0, 60), pos = "bottom",
+                                            dat ="stages",
+                                            height = unit(1.5, "lines"), rot = 0, size = 2.5, abbrv = TRUE) 
+
+iNEXT_plot_stages 
+
+## We can also add periods and stages together (epochs can be added too!):
+iNEXT_plot_stages_periods <- iNEXT_plot + coord_geo(xlim = c(237.0, 174.1), ylim = c(0, 60), pos = as.list(rep("bottom",2)),
+                                                    dat = list("stages","periods"),
+                                                    height = list(unit(1.5, "lines"),unit(1.5,"lines")), rot = list(0,0), size = list(2.5, 2.5), abbrv = list(TRUE, FALSE))
+
+iNEXT_plot_stages_periods
 
 ## Save a copy of the plot to the plots folder
 ggsave("./plots/iNEXT_gen.pdf", plot = iNEXT_plot, 
