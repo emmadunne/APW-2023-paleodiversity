@@ -25,7 +25,7 @@
 # 0. Packages used in this script -----------------------------------------
 
 library(tidyverse)
-library(deeptime)
+library(deeptime) # for plotting geotime scale
 
 require(devtools)
 install_version("iNEXT", version = "2.0.20")# the most up-to-date version of iNEXT is still a little glitchy, so we'll use this one for now
@@ -52,11 +52,6 @@ genus_data <- subset(occ_data, select=c(genus, accepted_name, occurrence_no, col
 #intervals <- read_csv("./data/intervals_Car_Tor.csv")
 
 
-N <- sum(Individuals) # N
-n1 <- length(which(Individuals==1))
-u <- 1- n1/N # Good's u
-
-
 ## To compute Good's u for each interval, we need to know the frequencies of each taxon (genus):
 tax_freq <- lapply(1:nrow(intervals), function(i) {
   tmp <- genus_data %>% filter(max_ma >= intervals[i,"max_ma"] & min_ma <= intervals[i,"min_ma"]) %>% 
@@ -74,8 +69,8 @@ str(tax_freq) # call up the list to see a summary of its structure
 goodsU <- function(occvec) {
   n <- sum(occvec) # sum of all occurrences
   f1 <- sum(occvec == 1); f2 <- sum(occvec == 2) # sum of singletons vs. doubletons
-  # out <- 1 - (f1 / sum(occvec)) # singleton-only coverage estimator
-  out <- 1 - length(which(occvec==1)) / n
+  out <- 1 - (f1 / sum(occvec)) # singleton-only coverage estimator
+  #out <- 1 - length(which(occvec==1)) / n
   #out <- 1 - (f1/n) * (((n - 1) * f1) / ((n - 1) * f1 + 2 * f2)) # Chao and Jost (2012) coverage estimator using singletons and doubletons
   out[is.nan(out) | is.infinite(out)] <- NA
   return(out)
@@ -152,12 +147,12 @@ cov_rare <- inc_data$iNextEst # extract these data from the output lists
 
 ## It allows 3 types of curves - see the documentation for more information
 ##  1. Sample-size-based R/E curve (type=1) - plots diversity estimates with confidence 
-##      intervals (if se=TRUE) as a function of sample size up to double
+##      intervals (if se=TRUE) as a function of sample size 
 ggiNEXT(inc_data, type=1, facet.var="site", se=TRUE) + theme_minimal()
 
 ##  2. Sample completeness curve (type=2) with confidence intervals - plots 
 ##      the sample coverage with respect to sample size 
-ggiNEXT(inc_data, type=2) + theme_minimal()
+ggiNEXT(inc_data, type=2, se=TRUE) + theme_minimal()
 
 ##  3. Coverage-based R/E curve (type=3) - plots the diversity estimates with 
 ##      confidence intervals as a function of sample coverage up to the maximum coverage
