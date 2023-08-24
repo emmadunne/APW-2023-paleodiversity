@@ -166,7 +166,7 @@ for(i in 1:length(cov_rare)) {
 }
 cov_rare <- do.call(rbind, cov_rare) %>% as_tibble() # convert to tibble for ease of plotting
 cov_rare[which(cov_rare$stage_int %in% intervals$interval_name[1:4]), "Period"] <- "Jurassic" # mark Jurassic stages
-cov_rare[which(cov_rare$stage_int %in% intervals$interval_name[5:7]), "Period"] <- "Triassic" # mark Jurassic stages
+cov_rare[which(cov_rare$stage_int %in% intervals$interval_name[5:7]), "Period"] <- "Triassic" # mark Triassic stages
 
 ## Finally, set up the plot in ggplot
 cov_rare_plot <- ggplot(data = cov_rare, aes(x = SC, y = qD, ymin = qD.LCL, ymax = qD.UCL, fill = stage_int, colour = Period, lty = method)) +
@@ -196,7 +196,7 @@ cov_rare_plot
 
 ## Start by creating a vector of quorum levels that we want to compute
 ## 0.4 is considered the 'standard', but the fashion now is to plot multiple quorum levels
-quorum_levels <- round(seq(from = 0.5, to = 0.8, by = 0.1), 1)
+quorum_levels <- round(seq(from = 0.3, to = 0.7, by = 0.1), 1)
 
 ## And create a new list to store output
 estD_output <- list() 
@@ -226,7 +226,7 @@ estD_plotting <- bind_rows(estD_output) # binds rows of a list
 estD_plotting$quorum_level <- as.factor(estD_plotting$quorum_level)
 
 ## Create a colour gradient for as many colours as you have quorum levels:
-col_gradient <- scales::seq_gradient_pal("#B7E3B6", "#0A6B09", "Lab")(seq(0, 1, length.out = 4))
+col_gradient <- scales::seq_gradient_pal("#B7E3B6", "#0A6B09", "Lab")(seq(0, 1, length.out = 5))
 
 ## Set your interval boundaries:
 int_boundaries <- c(237.0, 228.0, 208.5, 201.3, 199.3, 190.8, 182.7, 174.1)
@@ -238,6 +238,7 @@ iNEXT_plot <- ggplot(estD_plotting, aes(x = mid_ma, y = qD, ymin = qD.LCL, ymax 
   geom_ribbon(data = subset(estD_plotting, quorum_level == 0.4), aes(x = mid_ma, ymin = qD.LCL, ymax = qD.UCL), inherit.aes = FALSE, fill = col_gradient[2], alpha = 0.2) +
   geom_ribbon(data = subset(estD_plotting, quorum_level == 0.5), aes(x = mid_ma, ymin = qD.LCL, ymax = qD.UCL), inherit.aes = FALSE, fill = col_gradient[3], alpha = 0.2) +
   geom_ribbon(data = subset(estD_plotting, quorum_level == 0.6), aes(x = mid_ma, ymin = qD.LCL, ymax = qD.UCL), inherit.aes = FALSE, fill = col_gradient[4], alpha = 0.2) +
+  geom_ribbon(data = subset(estD_plotting, quorum_level == 0.7), aes(x = mid_ma, ymin = qD.LCL, ymax = qD.UCL), inherit.aes = FALSE, fill = col_gradient[4], alpha = 0.2) +
   ## Set our line and point sizes (and shapes):
   geom_line(linewidth = 1) +
   geom_point(aes(pch = method), size = 4.5) +
@@ -253,14 +254,14 @@ iNEXT_plot # Call the plot to the plots tab
 ## If you want to add a scale using the deeptime package, you can use the function coord_geo()
 ## which can be used with ggplot2. Let's add some abbreviated stages:
 
-iNEXT_plot_stages <- iNEXT_plot + coord_geo(xlim = c(237.0, 174.1), ylim = c(0, 60), pos = "bottom",
+iNEXT_plot_stages <- iNEXT_plot + coord_geo(xlim = c(237.0, 174.1), ylim = c(0, 30), pos = "bottom",
                                             dat ="stages",
                                             height = unit(1.5, "lines"), rot = 0, size = 2.5, abbrv = TRUE) 
 
 iNEXT_plot_stages 
 
 ## We can also add periods and stages together (epochs can be added too!):
-iNEXT_plot_stages_periods <- iNEXT_plot + coord_geo(xlim = c(237.0, 174.1), ylim = c(0, 60), pos = as.list(rep("bottom",2)),
+iNEXT_plot_stages_periods <- iNEXT_plot + coord_geo(xlim = c(237.0, 174.1), ylim = c(0, 30), pos = as.list(rep("bottom",2)),
                                                     dat = list("stages","periods"),
                                                     height = list(unit(1.5, "lines"),unit(1.5,"lines")), rot = list(0,0), size = list(2.5, 2.5), abbrv = list(TRUE, FALSE))
 
@@ -320,7 +321,7 @@ for(i in 1:length(freq_data_sq)) {
   count_list <- freq_data_sq[[i]]
   # Compute counts:
   genus_count <- length(count_list) # total number of genera in the string:
-  sing_count <- sum(count_list == 1) # umber of singletons (the number of genera in the string with an abundance of 1):
+  sing_count <- sum(count_list == 1) # number of singletons (the number of genera in the string with an abundance of 1):
   ind_count <- sum(count_list) # number of individuals (the sum of the string):
   # Find the sum of the string squared (this is where the name comes from):
   sum_nsq <- sum(count_list^2)
